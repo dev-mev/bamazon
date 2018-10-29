@@ -1,63 +1,58 @@
 const inquirer = require("inquirer");
+require("console.table");
 const products = require("./products.js");
 
-function loopInventory(err, res) {
-  for (let i = 0; i < res.length; i++) {
-    console.log("ITEM NUMBER: " + res[i].item_id + "\n"
-    + "PRODUCT: " + res[i].product_name + "\n"
-    + "DEPARTMENT: " + res[i].department_name + "\n"
-    + "PRICE: " + res[i].price + "\n"
-    + "QUANTITY AVAILABLE: " + res[i].stock_quantity + "\n");
-  }
-}
+function viewProducts(callback) {
+  products.getAllProducts((err, res) => {
+    console.table(res);
 
-function viewProducts() {
-  products.getAllProducts(function (err, res) {
-    loopInventory(err, res);
+    if (callback != null) {
+      callback();
+    }
   });
 }
 
 function viewLowInventory() {
-  products.getLowStock(function (err, res) {
-    loopInventory(err, res);
+  products.getLowStock((err, res) => {
+    console.table(res);
   });
 }
 
-// TODO: prints prompt first
 function addInventory() {
-  viewProducts();
-  inquirer
-    .prompt([
-      {
-        name: "itemToAdd",
-        message: "Enter the item number of the item you'd like to add more of."
-      },
-      {
-        name: "numberAdded",
-        message: "How many would you like to add?"
-      }
-    ])
-    .then(function (answer) {
-      products.getAllProducts(function (err, res) {
-        let chosenItem;
-        for (let i = 0; i < res.length; i++) {
-          if (res[i].item_id.toString() === answer.itemToAdd) {
-            chosenItem = res[i];
-          }
+  viewProducts(() => {
+    inquirer
+      .prompt([
+        {
+          name: "itemToAdd",
+          message: "Enter the item number of the item you'd like to add more of."
+        },
+        {
+          name: "numberAdded",
+          message: "How many would you like to add?"
         }
-        const newQuantity = parseInt(answer.numberAdded) + chosenItem.stock_quantity;
-
-        products.updateProducts([
-          {
-            stock_quantity: newQuantity
-          },
-          {
-            item_id: chosenItem.item_id
+      ])
+      .then((answer) => {
+        products.getAllProducts((err, res) => {
+          let chosenItem;
+          for (let i = 0; i < res.length; i++) {
+            if (res[i].item_id.toString() === answer.itemToAdd) {
+              chosenItem = res[i];
+            }
           }
-        ]);
+          const newQuantity = parseInt(answer.numberAdded) + chosenItem.stock_quantity;
+
+          products.updateProducts([
+            {
+              stock_quantity: newQuantity
+            },
+            {
+              item_id: chosenItem.item_id
+            }
+          ]);
+        });
+        console.log("Product inventory updated.");
       });
-      console.log("Product inventory updated.");
-    });
+  });
 }
 
 function addProduct() {
@@ -101,7 +96,7 @@ function addProduct() {
         message: "Enter the starting quantity:"
       }
     ])
-    .then(function (answer) {
+    .then((answer) => {
       products.addProduct([
         {
           product_name: answer.newProductName,
@@ -118,13 +113,13 @@ function showMenu() {
   inquirer
     .prompt([
       {
-        name: "products",
+        name: "managerOptions",
         type: "list",
         message: "What would you like to do?",
         choices: ["View products for sale", "View low inventory", "Add to inventory", "Add new product"]
       }
-    ]).then(function (answer) {
-      switch (answer.products) {
+    ]).then((answer) => {
+      switch (answer.managerOptions) {
       case "View products for sale":
         viewProducts();
         break;

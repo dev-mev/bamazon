@@ -18,6 +18,21 @@ function runQuery(query, queryArgs, callback) {
 }
 
 function getAllProducts(runFunction) {
+  runQuery(
+    `SELECT
+      item_id,
+      product_name,
+      department_name,
+      price,
+      stock_quantity
+    FROM products
+    LEFT JOIN departments 
+    ON products.department_id = departments.department_id`,
+    null, runFunction
+  );
+}
+
+function queryAllProducts(runFunction) {
   runQuery("SELECT * FROM products", null, runFunction);
 }
 
@@ -26,16 +41,51 @@ function updateProducts(queryArgs) {
 }
 
 function getLowStock(runFunction) {
-  runQuery("SELECT * FROM products WHERE stock_quantity < 5", null, runFunction);
+  runQuery(
+    `SELECT
+      item_id,
+      product_name,
+      department_name,
+      price,
+      stock_quantity
+    FROM products
+    LEFT JOIN departments 
+    ON products.department_id = departments.department_id
+    WHERE stock_quantity < 5`,
+    null, runFunction
+  );
 }
 
 function addProduct(queryArgs) {
   runQuery("INSERT INTO products SET ?", queryArgs, null);
 }
 
+function getSalesInfo(table) {
+  runQuery(
+    `SELECT
+      products.department_id,
+      department_name,
+      SUM(overhead_costs) AS overhead,
+      SUM(product_sales) AS sales,
+      SUM(product_sales - overhead_costs) AS profit
+    FROM departments
+    LEFT JOIN products
+      ON products.department_id = departments.department_id
+    GROUP BY departments.department_id`,
+    null, table
+  );
+}
+
+function addDepartment(queryArgs) {
+  runQuery("INSERT INTO departments SET ?", queryArgs, null);
+}
+
 module.exports = {
   getAllProducts,
   updateProducts,
   getLowStock,
-  addProduct
+  addProduct,
+  getSalesInfo,
+  addDepartment,
+  queryAllProducts
 };

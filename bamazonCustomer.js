@@ -1,4 +1,5 @@
 const inquirer = require("inquirer");
+require("console.table");
 const products = require("./products.js");
 
 function prompt() {
@@ -6,7 +7,7 @@ function prompt() {
     .prompt([
       {
         name: "product_choice",
-        message: "Please enter the item number of the product you would like to purchase.",
+        message: "Please enter the item ID number of the product you would like to purchase:",
         validate: (value) => {
           if (isNaN(value) === false && value !== "") {
             return true;
@@ -27,8 +28,8 @@ function prompt() {
         }
       }
     ])
-    .then(function (answer) {
-      products.getAllProducts(function (err, res) {
+    .then((answer) => {
+      products.queryAllProducts((err, res) => {
         let chosenItem;
         for (let i = 0; i < res.length; i++) {
           if (res[i].item_id.toString() === answer.product_choice) {
@@ -36,14 +37,16 @@ function prompt() {
           }
         }
 
-        if (chosenItem.stock_quantity > answer.quantity) {
+        if (chosenItem.stock_quantity >= answer.quantity) {
           console.log("We will ship your item '"
             + chosenItem.product_name + "' (quantity: "
             + answer.quantity + ") within three business days.");
           const quantityAfterPurchase = chosenItem.stock_quantity - parseInt(answer.quantity);
+          const totalProductSales = (chosenItem.price * parseInt(answer.quantity)) + chosenItem.product_sales;
           products.updateProducts([
             {
-              stock_quantity: quantityAfterPurchase
+              stock_quantity: quantityAfterPurchase,
+              product_sales: totalProductSales
             },
             {
               item_id: chosenItem.item_id
@@ -57,13 +60,7 @@ function prompt() {
     });
 }
 
-products.getAllProducts(function (err, res) {
-  for (let i = 0; i < res.length; i++) {
-    console.log("ITEM NUMBER: " + res[i].item_id + "\n"
-    + "PRODUCT: " + res[i].product_name + "\n"
-    + "DEPARTMENT: " + res[i].department_name + "\n"
-    + "PRICE: " + res[i].price + "\n"
-    + "QUANTITY AVAILABLE: " + res[i].stock_quantity + "\n");
-  }
+products.getAllProducts((err, res) => {
+  console.table(res);
   prompt();
 });
