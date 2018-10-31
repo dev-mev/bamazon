@@ -17,9 +17,9 @@ function runQuery(query, queryArgs, callback) {
   connection.end();
 }
 
-function getAllProducts(runFunction) {
-  runQuery(
-    `SELECT
+function getProductsSummary(runFunction, lowStockOnly) {
+  let query = `
+    SELECT
       item_id,
       product_name,
       department_name,
@@ -27,33 +27,19 @@ function getAllProducts(runFunction) {
       stock_quantity
     FROM products
     LEFT JOIN departments 
-    ON products.department_id = departments.department_id`,
-    null, runFunction
-  );
+    ON products.department_id = departments.department_id`;
+  if (lowStockOnly) {
+    query += " WHERE stock_quantity < 5";
+  }
+  runQuery(query, null, runFunction);
 }
 
-function queryAllProducts(runFunction) {
+function GetProductsWithSales(runFunction) {
   runQuery("SELECT * FROM products", null, runFunction);
 }
 
 function updateProducts(queryArgs) {
   runQuery("UPDATE products SET ? WHERE ?", queryArgs, null);
-}
-
-function getLowStock(runFunction) {
-  runQuery(
-    `SELECT
-      item_id,
-      product_name,
-      department_name,
-      price,
-      stock_quantity
-    FROM products
-    LEFT JOIN departments 
-    ON products.department_id = departments.department_id
-    WHERE stock_quantity < 5`,
-    null, runFunction
-  );
 }
 
 function addProduct(queryArgs) {
@@ -63,11 +49,11 @@ function addProduct(queryArgs) {
 function getSalesInfo(table) {
   runQuery(
     `SELECT
-      products.department_id,
+      departments.department_id,
       department_name,
-      SUM(overhead_costs) AS overhead,
-      SUM(product_sales) AS sales,
-      SUM(product_sales - overhead_costs) AS profit
+      IFNULL(SUM(overhead_costs), 0) AS overhead,
+      IFNULL(SUM(product_sales),0) AS sales,
+      IFNULL(SUM(product_sales - overhead_costs), 0) AS profit
     FROM departments
     LEFT JOIN products
       ON products.department_id = departments.department_id
@@ -76,16 +62,20 @@ function getSalesInfo(table) {
   );
 }
 
+function getDepartments(runFunction) {
+  runQuery("SELECT * FROM departments", null, runFunction);
+}
+
 function addDepartment(queryArgs) {
   runQuery("INSERT INTO departments SET ?", queryArgs, null);
 }
 
 module.exports = {
-  getAllProducts,
+  getProductsSummary,
   updateProducts,
-  getLowStock,
   addProduct,
   getSalesInfo,
+  getDepartments,
   addDepartment,
-  queryAllProducts
+  GetProductsWithSales
 };

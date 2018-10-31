@@ -1,6 +1,7 @@
 const inquirer = require("inquirer");
 require("console.table");
 const products = require("./products.js");
+const validation = require("./validation.js");
 
 function prompt() {
   inquirer
@@ -8,28 +9,16 @@ function prompt() {
       {
         name: "product_choice",
         message: "Please enter the item ID number of the product you would like to purchase:",
-        validate: (value) => {
-          if (isNaN(value) === false && value !== "") {
-            return true;
-          }
-          console.log("\nInvalid number");
-          return false;
-        }
+        validate: validation.validateNumeric
       },
       {
         name: "quantity",
         message: "How many would you like to buy?",
-        validate: (value) => {
-          if (isNaN(value) === false && value !== "") {
-            return true;
-          }
-          console.log("\nInvalid number");
-          return false;
-        }
+        validate: validation.validateNumeric
       }
     ])
     .then((answer) => {
-      products.queryAllProducts((err, res) => {
+      products.GetProductsWithSales((err, res) => {
         let chosenItem;
         for (let i = 0; i < res.length; i++) {
           if (res[i].item_id.toString() === answer.product_choice) {
@@ -60,7 +49,8 @@ function prompt() {
     });
 }
 
-products.getAllProducts((err, res) => {
+// displays all products when app starts
+products.getProductsSummary((err, res) => {
   console.table(res);
   prompt();
 });

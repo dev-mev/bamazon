@@ -1,21 +1,22 @@
 const inquirer = require("inquirer");
 require("console.table");
 const products = require("./products.js");
+const validation = require("./validation");
 
 function viewProducts(callback) {
-  products.getAllProducts((err, res) => {
+  products.getProductsSummary((err, res) => {
     console.table(res);
 
-    if (callback != null) {
+    if (callback) {
       callback();
     }
   });
 }
 
 function viewLowInventory() {
-  products.getLowStock((err, res) => {
+  products.getProductsSummary((err, res) => {
     console.table(res);
-  });
+  }, true);
 }
 
 function addInventory() {
@@ -24,15 +25,17 @@ function addInventory() {
       .prompt([
         {
           name: "itemToAdd",
-          message: "Enter the item number of the item you'd like to add more of."
+          message: "Enter the item number of the item you'd like to add more of.",
+          validate: validation.validateNumeric
         },
         {
           name: "numberAdded",
-          message: "How many would you like to add?"
+          message: "How many would you like to add?",
+          validate: validation.validateNumeric
         }
       ])
       .then((answer) => {
-        products.getAllProducts((err, res) => {
+        products.getProductsSummary((err, res) => {
           let chosenItem;
           for (let i = 0; i < res.length; i++) {
             if (res[i].item_id.toString() === answer.itemToAdd) {
@@ -56,57 +59,43 @@ function addInventory() {
 }
 
 function addProduct() {
-  inquirer
-    .prompt([
-      {
-        name: "newProductName",
-        message: "Enter the name of the product:",
-        validate: (value) => {
-          if (value === "") {
-            console.log("\nThis field is required.");
-            return false;
-          }
-          return true;
-        }
-      },
-      {
-        name: "newProductDept",
-        message: "Enter the department name:",
-        validate: (value) => {
-          if (value === "") {
-            console.log("\nThis field is required.");
-            return false;
-          }
-          return true;
-        }
-      },
-      {
-        name: "newProductPrice",
-        message: "Enter the sales price of the product:",
-        validate: (value) => {
-          if (isNaN(value) === false && value !== "") {
-            return true;
-          }
-          console.log("\nInvalid number");
-          return false;
-        }
-      },
-      {
-        name: "newProductQuantity",
-        message: "Enter the starting quantity:"
-      }
-    ])
-    .then((answer) => {
-      products.addProduct([
+  products.getDepartments((err, depts) => {
+    inquirer
+      .prompt([
         {
-          product_name: answer.newProductName,
-          department_name: answer.newProductDept,
-          price: answer.newProductPrice,
-          stock_quantity: answer.newProductQuantity
+          name: "newProductName",
+          message: "Enter the name of the product:",
+          validate: validation.validateText
+        },
+        {
+          name: "newProductDept",
+          message: "Enter the department:",
+          type: "list",
+          choices: depts.map(dept => ({ name: dept.department_name, value: dept.department_id }))
+        },
+        {
+          name: "newProductPrice",
+          message: "Enter the sales price of the product:",
+          validate: validation.validateNumeric
+        },
+        {
+          name: "newProductQuantity",
+          message: "Enter the starting quantity:",
+          validate: validation.validateNumeric
         }
-      ]);
-      console.log("Item added");
-    });
+      ])
+      .then((answer) => {
+        products.addProduct([
+          {
+            product_name: answer.newProductName,
+            department_id: answer.newProductDept,
+            price: answer.newProductPrice,
+            stock_quantity: answer.newProductQuantity
+          }
+        ]);
+        console.log("Item added");
+      });
+  });
 }
 
 function showMenu() {

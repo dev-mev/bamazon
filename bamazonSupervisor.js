@@ -1,6 +1,7 @@
 const inquirer = require("inquirer");
 require("console.table");
 const products = require("./products.js");
+const validation = require("./validation");
 
 function viewProductSales() {
   products.getSalesInfo((err, res) => {
@@ -14,24 +15,12 @@ function createDept() {
       {
         name: "deptName",
         message: "Enter the name of the department:",
-        validate: (value) => {
-          if (value === "") {
-            console.log("\nThis field is required.");
-            return false;
-          }
-          return true;
-        }
+        validate: validation.validateText
       },
       {
         name: "overhead",
         message: "Enter the overhead cost:",
-        validate: (value) => {
-          if (isNaN(value) === false && value !== "") {
-            return true;
-          }
-          console.log("\nInvalid number");
-          return false;
-        }
+        validate: validation.validateNumeric
       }
     ])
     .then((answer) => {
